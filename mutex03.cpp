@@ -27,6 +27,7 @@ int		NumPopErrors;
 omp_lock_t	Lock;
 
 void Push(int n) {
+   if (USE_MUTEX) omp_set_lock(&Lock);
 	StackPtr++;
 	Stack[StackPtr] = n;
 	if (USE_MUTEX) omp_unset_lock(&Lock);
@@ -34,6 +35,9 @@ void Push(int n) {
 
 
 int Pop() {
+
+   if (USE_MUTEX) omp_set_lock(&Lock);
+
 	// if the stack is empty, give the Push() function a chance to put something on the stack:
 	int t = 0;
 	while(StackPtr < 0 && t < TIMEOUT)
@@ -55,32 +59,14 @@ int Pop() {
 
 
 void PushAll() {
-	for(int i = 0; i < NUMN; i++) {
-		if (!USE_MUTEX) {
-			Push(i);
-			continue;
-		}
-
-		while (!omp_test_lock(&Lock)); // Hold while lock is set
-		omp_set_lock(&Lock);
-
+	for(int i = 0; i < NUMN; i++)
 		Push(i);
-	}
 }
 
 
 void PopAll() {
-	for(int i = 0; i < NUMN; i++) {
-		if (!USE_MUTEX) {
-			int n = Pop();
-			continue;
-		}
-
-		while (!omp_test_lock(&Lock)); // Hold while lock is set
-		omp_set_lock(&Lock);
-
+	for(int i = 0; i < NUMN; i++)
 		int n = Pop();
-	}
 }
 
 
@@ -91,7 +77,7 @@ int main(int argc, char *argv[]) {
 	return 1;
 #endif
 
-	omp_init_lock(&Lock);
+	if (USE_MUTEX) omp_init_lock(&Lock);
 
 	// this array is here to be sure all the pops actually happened:
 	for(int i = 0; i < NUMN; i++) {
