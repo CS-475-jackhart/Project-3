@@ -27,7 +27,7 @@ int		NumPopErrors;
 omp_lock_t	Lock;
 
 void Push(int n) {
-   if (USE_MUTEX) omp_set_lock(&Lock);
+	if (USE_MUTEX) omp_set_lock(&Lock);
 	StackPtr++;
 	Stack[StackPtr] = n;
 	if (USE_MUTEX) omp_unset_lock(&Lock);
@@ -35,9 +35,6 @@ void Push(int n) {
 
 
 int Pop() {
-
-   if (USE_MUTEX) omp_set_lock(&Lock);
-
 	// if the stack is empty, give the Push() function a chance to put something on the stack:
 	int t = 0;
 	while(StackPtr < 0 && t < TIMEOUT)
@@ -45,10 +42,10 @@ int Pop() {
 
 	// if there is nothing to pop, return;
 	if(StackPtr < 0) {
-		if (USE_MUTEX) omp_unset_lock(&Lock);
 		return FAILED;
 	}
 
+	if (USE_MUTEX) omp_set_lock(&Lock);
 	int n = Stack[StackPtr];
 	StackPtr--;
 	if (USE_MUTEX) omp_unset_lock(&Lock);
